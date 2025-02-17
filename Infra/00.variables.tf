@@ -22,3 +22,8 @@ variable "server_name" {
   description = "CIDR Block"
   default     = "0.0.0.0/0"
 }
+
+variable "bucket_name" {
+  type = string
+}
+
