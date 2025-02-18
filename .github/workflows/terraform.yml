@@ -2,15 +2,7 @@ name: Terraform AWS EC2 Deployment
 
 on:
   workflow_call:
-    inputs:
-      aws-assume-role-arn:
-        description: 'ARN del rol de IAM para asumir'
-        type: string
-        required: true
-      aws-region:
-        type: string
-        required: true
-
+   
 jobs:
   deploy:
     runs-on: ubuntu-latest
