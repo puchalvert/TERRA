@@ -12,6 +12,4 @@ permissions:
 jobs:
   terraform:
     uses: ./.github/workflows/terraform.yml
-    with:
-      aws-assume-role-arn: "arn:aws:iam::209479295186:oidc-provider/token.actions.githubusercontent.com"
-      aws-region: "us-east-2"
+    
