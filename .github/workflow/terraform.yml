@@ -1,81 +1,54 @@
-name: "Terraform Workflow"
+name: Terraform AWS EC2 Deployment
 
 on:
   workflow_call:
     inputs:
-      environment:
-        type: string
-        required: true
       aws-assume-role-arn:
+        description: 'ARN del rol de IAM para asumir'
         type: string
         required: true
       aws-region:
         type: string
         required: true
-      aws-statefile-s3-bucket:
-        type: string
-        required: true
-      aws-lock-dynamodb-table:
-        type: string
-        required: true
 
 jobs:
-  terraform:
+  deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
+    environment: production  # Configura un entorno en GitHub (opcional)
 
     steps:
-      - name: Checkout code
+      # Paso 1: Descargar el código
+      - name: Checkout
         uses: actions/checkout@v4
 
+      # Paso 2: Instalar Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.8.3
+          terraform_version: "1.6.6"  # Usa tu versión
 
+      # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ inputs.aws-assume-role-arn }}
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
-          aws-region: ${{ inputs.aws-region }}
-
-      - name: Read destroy configuration
-        id: read-destroy-config
-        run: |
-          DESTROY="$(jq -r '.${{ inputs.environment }}' ./infra/destroy_config.json)"
-          echo "destroy=$(echo $DESTROY)" >> $GITHUB_OUTPUT
-
+          aws-region: ${{ env.AWS_REGION }}
+        
+      # Paso 3: Inicializar Terraform
       - name: Terraform Init
-        run: |
-          cd infra && terraform init \
-            -backend-config="bucket=${{ inputs.aws-statefile-s3-bucket }}" \
-            -backend-config="key=${{ github.event.repository.name }}" \
-            -backend-config="region=${{ inputs.aws-region }}" \
-            -backend-config="dynamodb_table=${{ inputs.aws-lock-dynamodb-table }}"
-
+        run: terraform init
+        
+      # Paso 4: Validar sintaxis
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Destroy
-        if: steps.read-destroy-config.outputs.destroy == 'true'
-        id: terraform-destroy
-        run: cd infra &&
-          terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
-          terraform destroy -var-file="./envs/${{ inputs.environment }}/terraform.tfvars" -auto-approve
-
+      # Paso 5: Planificar cambios
       - name: Terraform Plan
-        if: steps.read-destroy-config.outputs.destroy != 'true'
-        id: terraform-plan
-        run: cd infra &&
-          terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
-          terraform plan -var-file="./envs/${{ inputs.environment }}/terraform.tfvars" -out="${{ inputs.environment }}.plan"
-
+        run: terraform plan -input=false
+        
+      # Paso 6: Aplicar cambios (solo en rama master)
       - name: Terraform Apply
-        if: steps.read-destroy-config.outputs.destroy != 'true'
-        id: terraform-apply
-        run: cd infra &&
-          terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
-          terraform apply "${{ inputs.environment }}.plan"
+        if: github.ref == 'refs/heads/master'
+        run: terraform apply -auto-approve -input=false
+        
