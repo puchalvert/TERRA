@@ -1,7 +1,3 @@
-resource "aws_s3_bucket" "bucket" {
-  bucket = var.bucket_name
-  }
-
 module "Prometheus_Server_A" {
   source = "./Prometheus_Server"
 

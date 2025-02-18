@@ -23,7 +23,4 @@ variable "server_name" {
   default     = "0.0.0.0/0"
 }
 
-variable "bucket_name" {
-  type = string
-}
 
