@@ -1,7 +1,14 @@
 name: Terraform AWS EC2 Deployment
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - master
+
+permissions:
+  id-token: write
+  contents: read
+  
    
 jobs:
   deploy:
@@ -25,7 +32,7 @@ jobs:
         with:
           
           aws-region: us-east-2
-          role-to-assume: "arn:aws:iam::209479295186:oidc-provider/token.actions.githubusercontent.com"
+          role-to-assume: "arn:aws:iam::209479295186:role/github_actions_puchalvert_pipeline"
           role-duration-seconds: 3600
           role-session-name: "GitHubActions"          
         
