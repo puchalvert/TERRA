@@ -20,7 +20,7 @@ variable "server_name" {
 
   variable "cidr_block" {
   description = "CIDR Block"
-  default     = "0.0.0.0/0"
+  default     = "0.0.0.0/0" # Ojo con esto en producción
 }
 
 
